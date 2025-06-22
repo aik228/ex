@@ -1,0 +1,92 @@
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <string>
+using namespace std;
+struct Equation {
+	double a =0;
+	double b =0;
+	double c=0;
+ };
+Equation parseequation(string line)
+{
+	Equation eq;
+	int rav_pos = line.find("=");
+	if (rav_pos == -1) return eq;
+	eq.c = stod(line.substr(rav_pos + 1));
+
+	string term = "";
+	char sigh = '+';
+	 
+	for (int i = 0;i <= rav_pos;i++) {
+		char c = line[i];
+		
+		if (c == '+' || c == '-' || i == rav_pos) {
+			if (!term.empty()) {
+				char last_char = term.back();
+
+				if (last_char == 'x' || last_char =='y') {
+					string coef_str = term.substr(0, term.size() - 1);
+					double coef_value;
+
+					if (coef_str.empty()) {
+						coef_value = 1.0;
+					}
+					else {
+						coef_value = stod(coef_str);
+					}
+
+					if(sigh =='-') {
+						coef_value = -coef_value;
+					}
+					if(last_char == 'x') {
+						eq.a += coef_value;
+					}
+					else {
+						eq.b += coef_value;
+					}
+				 }
+				term = "";
+			}
+			sigh = c;
+		}
+		else {
+			term += c;
+		}
+	}
+	return eq;
+}
+int main() {
+	ifstream file("uslov.txt");
+	if (!file) {
+		cerr << "File error!" << endl;
+		return 1;
+	}
+
+	string line1, line2;
+	getline(file, line1);
+	getline(file, line2);
+
+	Equation eq1 = parseequation(line1);
+	Equation eq2 = parseequation(line2);
+
+
+	double D = eq1.a * eq2.b - eq2.a * eq1.b;//главный опред
+	double Dx = eq1.c * eq2.b - eq1.b * eq2.c;//опред х
+	double Dy = eq1.a * eq2.c - eq2.a * eq1.c;//опред y
+
+	const double eps = 1e-6;
+	if (abs(D) > eps) {
+		double x = Dx / D;
+		double y = Dy / D;
+		cout << "Solution:\nx = " << x << "\ny = " << y << endl;
+	}
+	else if (abs(Dx) < eps && abs(Dy) < eps) {
+		cout << "Infinitely many solutions" << endl;
+	}
+	else {
+		cout << "No solution" << endl;
+	}
+
+	return 0;
+}
