@@ -1,0 +1,74 @@
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <vector>
+#include <iomanip>
+#include <sstream>
+#include <string>
+
+using namespace std;
+
+const double EPS = 1e-10;
+
+string formatDouble(double x) {
+    ostringstream oss;
+    oss << fixed << setprecision(5) << x;
+    string s = oss.str();
+    size_t pos = s.find_last_not_of('0');
+    if (pos != string::npos) {
+        if (s[pos] == '.') s.erase(pos);
+        else s.erase(pos + 1);
+    } else s = "0";
+    return s;
+}
+
+int main() {
+    ifstream in("input.txt");
+    if (!in) {
+        cerr << "Cannot open input file." << endl;
+        return 1;
+    }
+
+    double A, B, C, D, E, F, x0, y0;
+    in >> A >> B >> C >> D >> E >> F >> x0 >> y0;
+
+    double curve_value = A*x0*x0 + B*x0*y0 + C*y0*y0 + D*x0 + E*y0 + F;
+    if (fabs(curve_value) > 1e-5) {
+        cerr << "Error: Point not on curve (deviation: " << curve_value << ")" << endl;
+        return 1;
+    }
+
+    double a = 2*A*x0 + B*y0 + D;
+    double b = B*x0 + 2*C*y0 + E;
+    if (fabs(a) < EPS && fabs(b) < EPS) {
+        cerr << "Error: Singular point" << endl;
+        return 1;
+    }
+    double c = -(a*x0 + b*y0);
+
+    vector<string> terms;
+    double coeffs[3] = {a, b, c};
+    string vars[3] = {"x", "y", ""};
+
+    for (int i = 0; i < 3; i++) {
+        if (fabs(coeffs[i]) > EPS) {
+            string term = formatDouble(coeffs[i]);
+            if (!vars[i].empty()) term += "*" + vars[i];
+            terms.push_back(term);
+        }
+    }
+
+    ostringstream eq_oss;
+    if (terms.empty()) eq_oss << "0 = 0";
+    else {
+        eq_oss << terms[0];
+        for (int i = 1; i < terms.size(); i++) {
+            if (terms[i][0] == '-') eq_oss << " - " << terms[i].substr(1);
+            else eq_oss << " + " << terms[i];
+        }
+        eq_oss << " = 0";
+    }
+
+    cout << "Tangent line equation: " << eq_oss.str() << endl;
+    return 0;
+}
