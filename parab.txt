@@ -1,0 +1,77 @@
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <iomanip>
+
+using namespace std;
+
+int main() {
+    ifstream in("input.txt");
+    ofstream out("data.txt");
+    
+    double a, b, c, k;
+    in >> a >> b >> c >> k;
+
+    // Решаем квадратное уравнение
+    double discriminant = (b - k) * (b - k) - 4 * a * c;
+    
+    // Вычисляем корни
+    double x1 = (k - b + sqrt(discriminant)) / (2 * a);
+    double x2 = (k - b - sqrt(discriminant)) / (2 * a);
+
+    // Выбираем подходящую точку
+    double x0 = 0, y0 = 0;
+    bool valid_point = false;
+    
+    // Проверяем первый корень
+    if (fabs(x1) > 1e-9) {
+        double derivative = 2 * a * x1 + b;
+        if (fabs(derivative) > 1e-9) {
+            x0 = x1;
+            y0 = k * x0;
+            valid_point = true;
+        }
+    }
+    
+    // Проверяем второй корень, если первый не подошел
+    if (!valid_point && fabs(x2) > 1e-9) {
+        double derivative = 2 * a * x2 + b;
+        if (fabs(derivative) > 1e-9) {
+            x0 = x2;
+            y0 = k * x0;
+            valid_point = true;
+        }
+    }
+
+    if (!valid_point) {
+        cout << "No valid intersection point" << endl;
+        out << "No valid intersection point" << endl;
+        return 1;
+    }
+
+    // Вычисляем производную
+    double derivative = 2 * a * x0 + b;
+    
+    // Точки пересечения касательной с осями
+    double x_intercept = x0 - y0 / derivative;
+    double y_intercept = y0 - derivative * x0;
+
+    // Площадь треугольника
+    double area = 0.5 * fabs(x_intercept * y_intercept);
+
+    // Вывод на экран
+    cout << fixed << setprecision(6);
+    cout << "Intersection point: (" << x0 << ", " << y0 << ")" << endl;
+    cout << "Tangent-X intercept: (" << x_intercept << ", 0)" << endl;
+    cout << "Tangent-Y intercept: (0, " << y_intercept << ")" << endl;
+    cout << "Area: " << area << endl;
+
+    // Запись в файл
+    out << fixed << setprecision(6);
+    out << "Intersection point: (" << x0 << ", " << y0 << ")\n";
+    out << "Tangent-X intercept: (" << x_intercept << ", 0)\n";
+    out << "Tangent-Y intercept: (0, " << y_intercept << ")\n";
+    out << "Area: " << area << endl;
+
+    return 0;
+}

@@ -1,0 +1,46 @@
+#include iostream
+#include fstream
+#include cmath
+#include iomanip
+
+using namespace std;
+
+int main() {
+    ifstream in(input.txt);
+    ofstream out(data.txt);
+
+    double a, b, k;
+    in  a  b  k;
+
+  
+    double discriminant = b  b - a  a  k  k;
+
+ 
+    double x0 = (a  b)  sqrt(discriminant);
+    double y0 = k  x0;
+
+  
+    cout  fixed  setprecision(6);
+    cout  Intersection point (  x0  ,   y0  )  endl;
+
+    
+    double x_intercept = (a  a)  x0;
+    double y_intercept = -(b  b)  y0;
+
+   
+    cout  Tangent-X intercept (  x_intercept  , 0)  endl;
+    cout  Tangent-Y intercept (0,   y_intercept  )  endl;
+
+    
+    double area = 0.5  fabs(x_intercept  y_intercept);
+    cout  Area   area  endl;
+
+   
+    out  fixed  setprecision(6);
+    out  Intersection point (  x0  ,   y0  )n;
+    out  Tangent-X intercept (  x_intercept  , 0)n;
+    out  Tangent-Y intercept (0,   y_intercept  )n;
+    out  Area   area  endl;
+
+    return 0;
+}
