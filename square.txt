@@ -1,0 +1,47 @@
+.386
+.model flat, stdcall
+option casemap:none
+
+includelib C:\masm32\lib\kernel32.lib
+includelib C:\masm32\lib\msvcrt.lib
+
+include C:\masm32\include\kernel32.inc
+include C:\masm32\include\msvcrt.inc
+
+.data
+greetStr db "Enter number: ", 0
+formStr db "%d", 0
+outStr db 10, "Initial Num: %d", 10, "Square: %d", 10, 0
+waitStr db "%2c", 0
+firstNum dd ?
+
+result dd ?
+
+.code
+
+; eax - input
+; edx:eax - output
+; squares number
+square proc
+mul eax
+ret
+square endp
+
+start:
+  invoke crt_printf, addr greetStr
+  invoke crt_scanf, addr formStr, addr firstNum
+
+  mov eax, firstNum
+  cmp eax, 0
+  jg mulp
+  neg eax
+
+mulp:
+  call square
+  mov result, eax
+
+  invoke crt_printf, addr outStr, firstNum, result
+
+  invoke crt_scanf, addr waitStr, addr firstNum
+  invoke ExitProcess, 0 
+end start
