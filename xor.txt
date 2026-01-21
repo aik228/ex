@@ -1,0 +1,79 @@
+.386
+.model flat, stdcall
+option casemap:none
+
+includelib C:\masm32\lib\kernel32.lib
+
+include C:\masm32\include\kernel32.inc
+include C:\masm32\include\windows.inc
+
+.data
+stdIn dd ?
+stdOut dd ?
+
+cWrite dd 0
+cRead dd 0
+
+buf db 100 dup (?)
+
+greetStr db "Enter character: ", 10
+badStr db "Bad str", 10
+youEnteredStr db "You Entered: "
+xor3bitStr db "xor3bit: "
+xor3bitt2Str db "double xor3bit: "
+
+.code
+
+; al - input
+; al - output
+; xors first 3 bits with 010
+xor3bit proc
+  xor al, 01000000b
+  ret
+xor3bit endp
+
+start:
+  invoke GetStdHandle, STD_OUTPUT_HANDLE
+  mov stdOut, eax
+
+  invoke GetStdHandle, STD_INPUT_HANDLE
+  mov stdIn, eax
+
+  invoke WriteConsoleA, stdOut, addr greetStr, sizeof greetStr, addr cWrite, 0
+  invoke ReadConsole,   stdIn,  addr buf, 4, addr cRead, 0
+
+  cmp cRead, 3
+  jne badStrCase
+
+  mov [buf + 1], 10
+  invoke WriteConsoleA, stdOut, addr youEnteredStr, sizeof youEnteredStr, 0, 0
+  invoke WriteConsoleA, stdOut, addr buf, 2, 0, 0
+
+  mov al, [buf]
+  call xor3bit
+
+  mov [buf], al
+  push eax
+  invoke WriteConsoleA, stdOut, addr xor3bitStr, sizeof xor3bitStr, 0, 0
+  invoke WriteConsoleA, stdOut, addr buf, 2, addr cWrite, 0
+  pop eax
+
+  call xor3bit
+
+  mov [buf + 1], 10
+  mov [buf], al
+  push eax
+  invoke WriteConsoleA, stdOut, addr xor3bitt2Str, sizeof xor3bitt2Str, 0, 0
+  invoke WriteConsoleA, stdOut, addr buf, 2, addr cWrite, 0
+  pop eax
+
+  jmp endOfProg
+
+badStrCase:
+  invoke WriteConsoleA, stdOut, addr badStr, sizeof badStr, addr cWrite, 0
+
+endOfProg:
+  invoke ReadConsole, stdIn, addr buf, 1, 0, 0
+  invoke ExitProcess, 0
+
+end start
