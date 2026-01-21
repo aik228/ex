@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <math.h>
 
-// Глобальные переменные
 int CWIDTH = 300;
 int CHEIGHT = 300;
 int WHEIGHT = 500;
@@ -9,59 +8,51 @@ int WWIDTH = 500;
 double minT = 0;
 double maxT = 2 * 3.1415;
 double dt = 1e-3;
-double maxX = 1.5;  // Исправлено: строчная m
-double maxY = 1.5;  // Исправлено: строчная m
+double maxX = 1.5;
+double maxY = 1.5;
 HPEN pen;
 
-// Структура точки
 struct Pnt
 {
     double x;
     double y;
 };
 
-// Прототипы функций
 struct Pnt GetPoint(double t) {
     struct Pnt toRet;
-    toRet.x = pow(sin(t), 2);   // x = sin²(t)
-    toRet.y = pow(cos(t), 2);   // y = cos²(t)
+    toRet.x = pow(sin(t), 2);
+    toRet.y = pow(cos(t), 2);
     return toRet;
 };
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-// Точка входа в программу
-int APIENTRY WinMain(HINSTANCE hInstance,
+int APIENTRY wWinMain(HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
     PWSTR pCmdLine,
     int nCmdShow)
 {
-    // Создаем красное перо
     pen = CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
 
     MSG msg;
     HWND hwnd;
     WNDCLASS w;
 
-    // Инициализируем структуру класса окна
     memset(&w, 0, sizeof(WNDCLASS));
     w.style = CS_HREDRAW | CS_VREDRAW;
     w.lpfnWndProc = WndProc;
     w.hInstance = hInstance;
-    w.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);  // Исправлено
+    w.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
     w.lpszClassName = L"okno";
 
-    // Регистрируем класс окна
     RegisterClass(&w);
 
-    // Создаем окно
     hwnd = CreateWindow(L"okno", L"okno", WS_OVERLAPPEDWINDOW,
-        10, 10, 500, 500, NULL, NULL, hInstance, 0);  // Исправлено: L"okno"
+        10, 10, 500, 500, NULL, NULL, hInstance, 0);
 
-    // Показываем окно
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
-    // Цикл обработки сообщений
     while (GetMessage(&msg, NULL, 0, 0))
     {
         TranslateMessage(&msg);
@@ -71,7 +62,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     return (int)msg.wParam;
 }
 
-// Оконная процедура - обработчик сообщений
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
@@ -87,92 +77,126 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         double t = minT;
         HDC hdc = BeginPaint(hwnd, &ps);
 
-        // Вычисляем длину стрелочки
         double lenOfArrow;
         if (CWIDTH < CHEIGHT)
-            lenOfArrow = CWIDTH * 0.1;
+            lenOfArrow = CWIDTH * 0.05;
         else
-            lenOfArrow = CHEIGHT * 0.1;
+            lenOfArrow = CHEIGHT * 0.05;
 
-        // РИСОВАНИЕ ОСИ X
-        // Горизонтальная линия
         MoveToEx(hdc, (WWIDTH - CWIDTH) / 2, WHEIGHT / 2, NULL);
         LineTo(hdc, (WWIDTH + CWIDTH) / 2, WHEIGHT / 2);
+        TextOut(hdc, (WWIDTH + CWIDTH) / 2, WHEIGHT / 2, L"X", 1);
 
-        // Стрелочка вправо (верхняя часть)
         LineTo(hdc,
             (int)((WWIDTH + CWIDTH) / 2 - lenOfArrow * sqrt(2.0) / 2.0),
             (int)(WHEIGHT / 2 - lenOfArrow * sqrt(2.0) / 2.0));
 
-        // Стрелочка вправо (нижняя часть)
         MoveToEx(hdc, (WWIDTH + CWIDTH) / 2, WHEIGHT / 2, NULL);
         LineTo(hdc,
             (int)((WWIDTH + CWIDTH) / 2 - lenOfArrow * sqrt(2.0) / 2.0),
             (int)(WHEIGHT / 2 + lenOfArrow * sqrt(2.0) / 2.0));
 
-        // РИСОВАНИЕ ОСИ Y
-        // Вертикальная линия
         MoveToEx(hdc, WWIDTH / 2, (WHEIGHT + CHEIGHT) / 2, NULL);
         LineTo(hdc, WWIDTH / 2, (WHEIGHT - CHEIGHT) / 2);
 
-        // Стрелочка вверх (левая часть)
         LineTo(hdc,
             (int)(WWIDTH / 2 - lenOfArrow * sqrt(2.0) / 2.0),
             (int)((WHEIGHT - CHEIGHT) / 2 + lenOfArrow * sqrt(2.0) / 2.0));
 
-        // Стрелочка вверх (правая часть)
         MoveToEx(hdc, WWIDTH / 2, (WHEIGHT - CHEIGHT) / 2, NULL);
         LineTo(hdc,
             (int)(WWIDTH / 2 + lenOfArrow * sqrt(2.0) / 2.0),
             (int)((WHEIGHT - CHEIGHT) / 2 + lenOfArrow * sqrt(2.0) / 2.0));
 
-        // Выбираем красное перо для графика
+        TextOut(hdc, WWIDTH / 2, (WHEIGHT - CHEIGHT) / 2 - 20, L"Y", 1);
+        TextOut(hdc, WWIDTH / 2 - 10, WHEIGHT / 2 + 10, L"0", 1);
+
+        int centerX = WWIDTH / 2;
+        int centerY = WHEIGHT / 2;
+        int tickLength = 5;
+        double scaleX = CWIDTH / (2.0 * maxX);
+        double scaleY = CHEIGHT / (2.0 * maxY);
+
+        MoveToEx(hdc, centerX + (int)(0.5 * scaleX), centerY - tickLength, NULL);
+        LineTo(hdc, centerX + (int)(0.5 * scaleX), centerY + tickLength);
+        TextOut(hdc, centerX + (int)(0.5 * scaleX) - 5, centerY + tickLength + 5, L"0.5", 3);
+
+        MoveToEx(hdc, centerX + (int)(1.0 * scaleX), centerY - tickLength, NULL);
+        LineTo(hdc, centerX + (int)(1.0 * scaleX), centerY + tickLength);
+        TextOut(hdc, centerX + (int)(1.0 * scaleX) - 5, centerY + tickLength + 5, L"1", 1);
+
+        MoveToEx(hdc, centerX + (int)(1.5 * scaleX), centerY - tickLength, NULL);
+        LineTo(hdc, centerX + (int)(1.5 * scaleX), centerY + tickLength);
+        TextOut(hdc, centerX + (int)(1.5 * scaleX) - 5, centerY + tickLength + 5, L"1.5", 3);
+
+        MoveToEx(hdc, centerX - (int)(0.5 * scaleX), centerY - tickLength, NULL);
+        LineTo(hdc, centerX - (int)(0.5 * scaleX), centerY + tickLength);
+        TextOut(hdc, centerX - (int)(0.5 * scaleX) - 10, centerY + tickLength + 5, L"-0.5", 4);
+
+        MoveToEx(hdc, centerX - (int)(1.0 * scaleX), centerY - tickLength, NULL);
+        LineTo(hdc, centerX - (int)(1.0 * scaleX), centerY + tickLength);
+        TextOut(hdc, centerX - (int)(1.0 * scaleX) - 10, centerY + tickLength + 5, L"-1", 2);
+
+        MoveToEx(hdc, centerX - (int)(1.5 * scaleX), centerY - tickLength, NULL);
+        LineTo(hdc, centerX - (int)(1.5 * scaleX), centerY + tickLength);
+        TextOut(hdc, centerX - (int)(1.5 * scaleX) - 10, centerY + tickLength + 5, L"-1.5", 4);
+
+        MoveToEx(hdc, centerX - tickLength, centerY - (int)(0.5 * scaleY), NULL);
+        LineTo(hdc, centerX + tickLength, centerY - (int)(0.5 * scaleY));
+        TextOut(hdc, centerX - tickLength - 25, centerY - (int)(0.5 * scaleY) - 10, L"0.5", 3);
+
+        MoveToEx(hdc, centerX - tickLength, centerY - (int)(1.0 * scaleY), NULL);
+        LineTo(hdc, centerX + tickLength, centerY - (int)(1.0 * scaleY));
+        TextOut(hdc, centerX - tickLength - 25, centerY - (int)(1.0 * scaleY) - 10, L"1", 1);
+
+        MoveToEx(hdc, centerX - tickLength, centerY - (int)(1.5 * scaleY), NULL);
+        LineTo(hdc, centerX + tickLength, centerY - (int)(1.5 * scaleY));
+        TextOut(hdc, centerX - tickLength - 25, centerY - (int)(1.5 * scaleY) - 10, L"1.5", 3);
+
+        MoveToEx(hdc, centerX - tickLength, centerY + (int)(0.5 * scaleY), NULL);
+        LineTo(hdc, centerX + tickLength, centerY + (int)(0.5 * scaleY));
+        TextOut(hdc, centerX - tickLength - 25, centerY + (int)(0.5 * scaleY) - 10, L"-0.5", 4);
+
+        MoveToEx(hdc, centerX - tickLength, centerY + (int)(1.0 * scaleY), NULL);
+        LineTo(hdc, centerX + tickLength, centerY + (int)(1.0 * scaleY));
+        TextOut(hdc, centerX - tickLength - 25, centerY + (int)(1.0 * scaleY) - 10, L"-1", 2);
+
+        MoveToEx(hdc, centerX - tickLength, centerY + (int)(1.5 * scaleY), NULL);
+        LineTo(hdc, centerX + tickLength, centerY + (int)(1.5 * scaleY));
+        TextOut(hdc, centerX - tickLength - 25, centerY + (int)(1.5 * scaleY) - 10, L"-1.5", 4);
+
         SelectObject(hdc, pen);
 
-        // Получаем первую точку графика
         p = GetPoint(t);
-
-        // Преобразуем математические координаты в экранные
         p.x = p.x / maxX * ((double)CWIDTH) / 2.0 + (double)WWIDTH / 2.0;
         p.y = -p.y / maxY * ((double)CHEIGHT) / 2.0 + (double)WHEIGHT / 2.0;
 
-        // Перемещаемся к первой точке
         MoveToEx(hdc, (int)p.x, (int)p.y, NULL);
 
-        // РИСОВАНИЕ ГРАФИКА
         while (t < maxT)
         {
             p = GetPoint(t);
 
-            // Преобразование координат
             p.x = p.x / maxX * (double)CWIDTH / 2.0 + (double)WWIDTH / 2.0;
             p.y = -p.y / maxY * (double)CHEIGHT / 2.0 + (double)WHEIGHT / 2.0;
 
-            // Рисуем линию к следующей точке
             LineTo(hdc, (int)p.x, (int)p.y);
 
-            // Увеличиваем параметр
             t += dt;
         }
 
-        // Завершаем рисование
         EndPaint(hwnd, &ps);
         break;
     }
 
     case WM_SIZE:
-        // Обновляем размеры окна при изменении
         WWIDTH = LOWORD(lParam);
         WHEIGHT = HIWORD(lParam);
         break;
 
     default:
-        // Обработка остальных сообщений по умолчанию
         return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 
     return 0;
 }
-
-// Функция, задающая параметрическую кривую
-// МЕНЯЙТЕ ЭТУ ФУНКЦИЮ ДЛЯ РАЗНЫХ ГРАФИКОВ
