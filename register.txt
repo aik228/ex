@@ -1,0 +1,71 @@
+.386
+.model flat, stdcall
+option casemap:none
+
+includelib C:\masm32\lib\kernel32.lib
+
+include C:\masm32\include\kernel32.inc
+include C:\masm32\include\windows.inc
+
+.data
+stdIn dd ?
+stdOut dd ?
+
+cWrite dd 0
+cRead dd 0
+
+buf db 100 dup (?)
+
+greetStr db "Enter 2 characters: ", 10
+badStr db "Bad str", 10
+youEnteredStr db "You entered: "
+
+.code
+
+; al - input
+; al - output
+; transfers char to lowercase
+lowercase proc
+  cmp al, 'A'
+  jb endOfFunc
+  cmp al, 'Z'
+  ja endOfFunc
+  sub al, 'A'
+  add al, 'a'
+endOfFunc:
+  ret
+lowercase endp
+
+start:
+  invoke GetStdHandle, STD_OUTPUT_HANDLE
+  mov stdOut, eax
+
+  invoke GetStdHandle, STD_INPUT_HANDLE
+  mov stdIn, eax
+
+  invoke WriteConsoleA, stdOut, addr greetStr, sizeof greetStr, addr cWrite, 0
+  invoke ReadConsole,   stdIn,  addr buf, 5, addr cRead, 0
+
+  cmp cRead, 4
+  jne badStrCase
+
+  mov al, [buf]
+  call lowercase
+  mov byte ptr [buf], al
+
+  mov al, [buf + 1]
+  call lowercase
+  mov byte ptr [buf+1], al
+  
+  mov byte ptr [buf + 2], 10
+  invoke WriteConsoleA, stdOut, addr buf, 3, addr cWrite, 0
+  jmp endOfProg
+
+badStrCase:
+  invoke WriteConsoleA, stdOut, addr badStr, sizeof badStr, addr cWrite, 0
+
+endOfProg:
+  invoke ReadConsole, stdIn, addr buf, 1, 0, 0
+  invoke ExitProcess, 0
+
+end start
