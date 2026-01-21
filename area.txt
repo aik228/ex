@@ -1,0 +1,50 @@
+.386
+.model flat, stdcall
+option casemap:none
+
+includelib D:\masm32\lib\kernel32.lib
+includelib D:\masm32\lib\msvcrt.lib
+
+include D:\masm32\include\kernel32.inc
+include D:\masm32\include\msvcrt.inc
+
+.data
+greetStr db "Enter 2 numbers separated by space: ", 0
+formStr db "%d %d", 0
+badNumStr db "One of 2 nums are wrong", 10, 0
+outStr db 10, "Result: %u", 10, 0
+outStrr db "%d %d", 10, 0
+waitStr db "%2c", 0
+firstNum dd ?
+secondNum dd ?
+
+result dd ?
+
+.code
+start:
+  invoke crt_printf, addr greetStr
+  invoke crt_scanf, addr formStr, addr firstNum, addr secondNum
+  
+  cmp firstNum, 0
+  jl badNum
+
+  cmp secondNum, 0
+  jl badNum
+
+  mov eax, firstNum
+  mov ebx, secondNum
+
+  mul ebx
+  mov result, eax
+
+  invoke crt_printf, addr outStr, result
+  jmp endOfProg
+  
+
+badNum:
+  invoke crt_printf, addr badNumStr
+
+endOfProg:
+  invoke crt_scanf, addr waitStr, addr firstNum
+  invoke ExitProcess, 0 
+end start
