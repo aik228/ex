@@ -1,0 +1,39 @@
+.386
+.model flat,stdcall
+option casemap:none
+
+include msvcrt.inc
+includelib msvcrt.lib
+
+includelib kernel32.lib
+ExitProcess PROTO STDCALL :DWORD
+
+.data?
+inputByte db ?
+
+.const
+
+inviteMsg db 10, "Please enter char: ", 0
+formatChar db "%c", 0
+
+output db 10, "Result char: %c", 0
+.code
+
+cut3bit PROC x:BYTE
+mov al, x
+shl al , 3
+shr al, 3
+ret ; Result in al
+cut3bit ENDP
+
+Main PROC
+invoke crt_printf, offset inviteMsg
+invoke crt_scanf, offset formatChar, offset inputByte
+
+invoke cut3bit, inputByte
+mov inputByte, al
+invoke crt_printf, offset output, inputByte
+
+invoke ExitProcess, 0
+Main ENDP
+end Main
