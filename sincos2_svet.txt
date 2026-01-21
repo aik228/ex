@@ -1,0 +1,335 @@
+// WindowsProject8.cpp : Определяет точку входа для приложения.
+//
+
+#include "framework.h"
+#include <windows.h>
+#include <cmath>
+#include <fstream>
+#include "WindowsProject8.h"
+
+#define MAX_LOADSTRING 100
+
+#define PI acos(-1)
+#define IDT_TIMER 100 
+#define ID_BTNREDRAW 101
+
+int MaxX, MaxY;
+int offsetX, offsetY;
+int scaleX, scaleY;
+
+HPEN penRed = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+void draw(HWND hWnd);
+
+int x2u(double x)
+{
+    return offsetX + scaleX * x;
+}
+
+int y2v(double y)
+{
+    return offsetY - scaleY * y;
+}
+
+double calculateX(double t)
+{
+    return pow(cos(t), 2);
+}
+
+double calculateY(double t)
+{
+    return pow(sin(t), 2);
+}
+
+
+// Глобальные переменные:
+HINSTANCE hInst;                                // текущий экземпляр
+WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
+WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
+
+// Отправить объявления функций, включенных в этот модуль кода:
+ATOM                MyRegisterClass(HINSTANCE hInstance);
+BOOL                InitInstance(HINSTANCE, int);
+LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
+                     _In_opt_ HINSTANCE hPrevInstance,
+                     _In_ LPWSTR    lpCmdLine,
+                     _In_ int       nCmdShow)
+{
+    UNREFERENCED_PARAMETER(hPrevInstance);
+    UNREFERENCED_PARAMETER(lpCmdLine);
+
+    // TODO: Разместите код здесь.
+
+    // Инициализация глобальных строк
+    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_WINDOWSPROJECT8, szWindowClass, MAX_LOADSTRING);
+    MyRegisterClass(hInstance);
+
+    // Выполнить инициализацию приложения:
+    if (!InitInstance (hInstance, nCmdShow))
+    {
+        return FALSE;
+    }
+
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSPROJECT8));
+
+    MSG msg;
+
+    // Цикл основного сообщения:
+    while (GetMessage(&msg, nullptr, 0, 0))
+    {
+        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+
+    return (int) msg.wParam;
+}
+
+
+
+//
+//  ФУНКЦИЯ: MyRegisterClass()
+//
+//  ЦЕЛЬ: Регистрирует класс окна.
+//
+ATOM MyRegisterClass(HINSTANCE hInstance)
+{
+    WNDCLASSEXW wcex;
+
+    wcex.cbSize = sizeof(WNDCLASSEX);
+
+    wcex.style          = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc    = WndProc;
+    wcex.cbClsExtra     = 0;
+    wcex.cbWndExtra     = 0;
+    wcex.hInstance      = hInstance;
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WINDOWSPROJECT8));
+    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_WINDOWSPROJECT8);
+    wcex.lpszClassName  = szWindowClass;
+    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+
+    return RegisterClassExW(&wcex);
+}
+
+//
+//   ФУНКЦИЯ: InitInstance(HINSTANCE, int)
+//
+//   ЦЕЛЬ: Сохраняет маркер экземпляра и создает главное окно
+//
+//   КОММЕНТАРИИ:
+//
+//        В этой функции маркер экземпляра сохраняется в глобальной переменной, а также
+//        создается и выводится главное окно программы.
+//
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+{
+   hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
+
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+
+   if (!hWnd)
+   {
+      return FALSE;
+   }
+
+   ShowWindow(hWnd, nCmdShow);
+   UpdateWindow(hWnd);
+
+   return TRUE;
+}
+
+//
+//  ФУНКЦИЯ: WndProc(HWND, UINT, WPARAM, LPARAM)
+//
+//  ЦЕЛЬ: Обрабатывает сообщения в главном окне.
+//
+//  WM_COMMAND  - обработать меню приложения
+//  WM_PAINT    - Отрисовка главного окна
+//  WM_DESTROY  - отправить сообщение о выходе и вернуться
+//
+//
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    static HDC memBit, graphBit;
+    static HBITMAP hBitmap;
+    switch (message)
+    {
+    case WM_CREATE:
+    {
+        HDC hdc = GetDC(hWnd);
+        memBit = CreateCompatibleDC(hdc);
+        graphBit = CreateCompatibleDC(hdc);
+        ReleaseDC(hWnd, hdc);
+
+    }
+    case WM_COMMAND:
+        {
+            int wmId = LOWORD(wParam);
+            // Разобрать выбор в меню:
+            switch (wmId)
+            {
+            case IDM_ABOUT:
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                break;
+            case IDM_EXIT:
+                DestroyWindow(hWnd);
+                break;
+            default:
+                return DefWindowProc(hWnd, message, wParam, lParam);
+            }
+        }
+        break;
+    case WM_PAINT:
+        {
+            draw(hWnd);
+        }
+        break;
+    case WM_SIZE:
+    {
+        MaxX = 200; //MaxX = LOWORD(lParam)
+        MaxY = 200; //если крылов хочет чтобы график разворачивался поменять на MaxY = HIWORD(lParam)
+        offsetX = MaxX / 2; offsetY = MaxY / 2;
+        scaleX = MaxX / 8; scaleY = MaxY / 8;
+
+        hBitmap = CreateCompatibleBitmap(GetDC(hWnd), MaxX, MaxY);
+        SelectObject(memBit, hBitmap);
+        SelectObject(graphBit, hBitmap);
+
+
+
+        break;
+    }
+    case WM_DESTROY:
+
+        PostQuitMessage(0);
+        break;
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
+}
+
+// Обработчик сообщений для окна "О программе".
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
+void draw(HWND hWnd) {
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hWnd, &ps);
+    MoveToEx(hdc, x2u(calculateX(0)), y2v(calculateY(0)), NULL);
+    SelectObject(hdc, penRed);
+    for (double t = 0; t <= 2 * PI; t += 0.01)
+    {
+        double x = calculateX(t);
+        double y = calculateY(t);
+        LineTo(hdc, x2u(x), y2v(y));
+    }
+
+    // Получение размеров окна
+    RECT rect;
+
+    GetClientRect(hWnd, &rect);
+    SetRect(&rect, 0, 0, 200, 200); //если крылов хочет чтобы график разворачивался убрать эту строку
+
+    // Определение центра окна
+    int centerX = (rect.right - rect.left) / 2;
+    int centerY = (rect.bottom - rect.top) / 2;
+
+    // Отрисовка осей X и Y
+    HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0)); // Создание пера с черным цветом
+    HGDIOBJ hOldPen = SelectObject(hdc, hPen); // Выбор пера
+
+    MoveToEx(hdc, rect.left, centerY, NULL);
+    LineTo(hdc, rect.right, centerY);
+
+    MoveToEx(hdc, centerX, rect.top, NULL);
+    LineTo(hdc, centerX, rect.bottom);
+
+    // Отрисовка стрелок на осях
+    int arrowSize = 5; // Размер стрелок
+
+    // Стрелка на оси X
+    MoveToEx(hdc, rect.right, centerY, NULL);
+    LineTo(hdc, rect.right - arrowSize, centerY - arrowSize);
+    MoveToEx(hdc, rect.right, centerY, NULL);
+    LineTo(hdc, rect.right - arrowSize, centerY + arrowSize);
+
+    // Стрелка на оси Y
+    MoveToEx(hdc, centerX, rect.top, NULL);
+    LineTo(hdc, centerX - arrowSize, rect.top + arrowSize);
+    MoveToEx(hdc, centerX, rect.top, NULL);
+    LineTo(hdc, centerX + arrowSize, rect.top + arrowSize);
+
+    // Определение интервалов между отметками на осях
+    int intervalX = (rect.right - rect.left) / 8; // Интервал на оси X
+    int intervalY = (rect.bottom - rect.top) / 8; // Интервал на оси Y
+
+    // Отрисовка числовых меток на оси X
+    for (int i = rect.left + intervalX; i <= rect.right; i += intervalX)
+    {
+
+        MoveToEx(hdc, i, centerY - 5, NULL);
+        LineTo(hdc, i, centerY + 5);
+
+        // Преобразование координаты i в значение на оси X
+        double valueX = (i - centerX) / static_cast<double>(scaleX);
+
+        // Отображение числовой метки
+        WCHAR buffer[10];
+        swprintf_s(buffer, L"%.f", valueX);
+        TextOut(hdc, i - 10, centerY + 2, buffer, wcslen(buffer));
+
+    }
+
+    // Отрисовка числовых меток на оси Y
+    for (int i = rect.top + intervalY; i <= rect.bottom; i += intervalY)
+    {
+        MoveToEx(hdc, centerX - 5, i, NULL);
+        LineTo(hdc, centerX + 5, i);
+
+        // Преобразование координаты i в значение на оси Y
+        double valueY = (centerY - i) / static_cast<double>(scaleY);
+        if (valueY >= 0.5 || valueY <= -0.5) {
+            // Отображение числовой метки
+            WCHAR buffer[10];
+            swprintf_s(buffer, L"%.f", valueY);
+            TextOut(hdc, centerX - 15, i - 10, buffer, wcslen(buffer));
+        }
+    }
+
+
+    // Отрисовка текстовой метки "X" около оси X
+    TextOut(hdc, rect.right + 5, centerY + 5, L"X", 1);
+
+    // Отрисовка текстовой метки "Y" около оси Y
+    TextOut(hdc, centerX + 10, rect.top + 10, L"Y", 1);
+
+    SelectObject(hdc, hOldPen); // Восстановление предыдущего пера
+    DeleteObject(hPen); // Удаление созданного пера
+
+    EndPaint(hWnd, &ps);
+}
