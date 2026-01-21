@@ -1,0 +1,70 @@
+.386
+.model flat, stdcall
+option casemap:none
+
+includelib C:\masm32\lib\kernel32.lib
+includelib C:\masm32\lib\msvcrt.lib
+
+include C:\masm32\include\kernel32.inc
+include C:\masm32\include\msvcrt.inc
+include C:\masm32\include\windows.inc
+
+.data
+buf db 100 dup (?)
+stdout dd ?
+stdin dd ?
+
+cRead dd ?
+cWrite dd ?
+
+greetStr db "Enter 2 char str: "
+outStr db "Demainder - %d, quotient - %d", 10, 0
+
+badStr db "Wrong input", 10
+
+.code
+;input: ax - first num
+; bl -second
+; output: ah - remainder
+; al - chastnoe
+; divides one number on another and return remainder and chastnoe
+divide proc
+  div bl
+  ret
+divide endp
+start:
+
+invoke GetStdHandle, STD_INPUT_HANDLE
+mov stdin, eax
+
+invoke GetStdHandle, STD_OUTPUT_HANDLE
+mov stdout, eax
+
+invoke WriteConsoleA, stdout, addr greetStr, sizeof greetStr, addr cWrite, 0
+invoke ReadConsoleA, stdin, addr buf, 5, addr cRead, 0
+
+cmp cRead, 4
+jne badStrCase
+
+xor eax, eax
+xor ebx, ebx
+
+mov al, [buf]
+mov bl, [buf + 1]
+
+call divide
+
+mov bl, ah
+xor ah, ah
+
+invoke crt_printf, addr outStr, eax, ebx
+jmp endOfProg
+
+badStrCase:
+  invoke WriteConsoleA, stdout, addr badStr, sizeof badStr, addr cWrite, 0
+
+endOfProg:
+  invoke ReadConsole, stdin, addr buf, 1, 0, 0
+  invoke ExitProcess, 0 
+
+end start
