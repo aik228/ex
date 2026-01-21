@@ -1,0 +1,59 @@
+.386
+.model flat, stdcall
+option casemap:none
+
+includelib C:\masm32\lib\kernel32.lib
+includelib C:\masm32\lib\msvcrt.lib
+
+include C:\masm32\include\kernel32.inc
+include C:\masm32\include\msvcrt.inc
+
+.data
+
+result dd 1
+num dd 1
+greetStr db "Enter number a( 0<=a<13 ) ", 0
+formStr db "%d", 0
+waitStr db "%2c", 0
+negNumStr db "Bad number", 10, 0
+bigNumStr db "This number is too big", 10, 0
+outStr db " %d! = %d ", 10, 0
+
+.code
+
+factor proc
+  mov eax, 1
+  mainLoop:
+  mul ecx
+  loop mainLoop
+  ret
+factor endp
+
+start:
+  invoke crt_printf, addr greetStr
+  invoke crt_scanf, addr formStr, addr num
+  mov eax, num
+  mov result, 1
+  cmp eax, 0
+  jl negNum
+  cmp eax, 12
+  jg bigNum
+  cmp eax, 0
+  je outOfRes
+  xchg eax, ecx
+  call factor
+mov result, eax
+jmp outOfRes
+  
+negNum:
+  invoke crt_printf, addr negNumStr
+  jmp endOfProg
+bigNum:
+  invoke crt_printf, addr bigNumStr
+  jmp endOfProg
+outOfRes:
+  invoke crt_printf, addr outStr, num, result
+endOfProg:
+  invoke crt_scanf, addr waitStr, addr result
+  invoke ExitProcess, 0
+end start
